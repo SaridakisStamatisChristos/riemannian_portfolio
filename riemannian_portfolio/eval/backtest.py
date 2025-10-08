@@ -5,13 +5,11 @@ import importlib
 import numpy as np
 import pandas as pd
 
-from ..core.optim_ng_eg import natural_mirror_step
+from ..core.optim_ng_eg import natural_mirror_step_trust
 from ..core.fisher import empirical_fisher_diag
 from ..core.bands import no_trade_policy
 from ..models.estimators import EWMA
 from ..objectives import grad_log_utility
-
-_EPS = 1e-12
 
 def synthetic_prices(T=1000, n=8, seed=7):
     rng = np.random.default_rng(seed)
@@ -25,7 +23,7 @@ def synthetic_prices(T=1000, n=8, seed=7):
     P = 100 * np.exp(np.cumsum(X, axis=0))
     return pd.DataFrame(P, columns=[f"A{i}" for i in range(n)])
 
-def run_backtest(seed=7, T=800, n=10, eta=0.5, delta_in=1e-4, delta_out=5e-4, window=64):
+def run_backtest(seed=7, T=800, n=10, eta=0.5, delta_in=1e-4, delta_out=5e-4, window=64, kl_step=2e-4):
     prices = synthetic_prices(T=T, n=n, seed=seed)
     rets = prices.pct_change().dropna().to_numpy()
 
@@ -51,7 +49,7 @@ def run_backtest(seed=7, T=800, n=10, eta=0.5, delta_in=1e-4, delta_out=5e-4, wi
         diagF = empirical_fisher_diag(w, samples, mu, Sigma)
         invF = 1.0 / np.maximum(diagF, 1e-8)
 
-        w_prop = natural_mirror_step(w, g, invF, eta)
+        w_prop = natural_mirror_step_trust(w, g, invF, eta, kl_step=kl_step)
         w_new = no_trade_policy(w, w_prop, delta_in, delta_out)
 
         r_p = float(w @ x)
@@ -85,11 +83,12 @@ def main():
     p.add_argument("--delta-in", type=float, default=1e-4, dest="delta_in")
     p.add_argument("--delta-out", type=float, default=5e-4, dest="delta_out")
     p.add_argument("--window", type=int, default=64)
+    p.add_argument("--kl-step", type=float, default=2e-4)
     p.add_argument("--plot", action="store_true")
     args = p.parse_args()
 
     res = run_backtest(seed=args.seed, T=args.T, n=args.n, eta=args.eta,
-                       delta_in=args.delta_in, delta_out=args.delta_out, window=args.window)
+                       delta_in=args.delta_in, delta_out=args.delta_out, window=args.window, kl_step=args.kl_step)
     print(res.describe().T)
     if args.plot:
         _maybe_plot(res)
