@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 import numpy as np
+from .bands import kl_divergence
 
 _EPS = 1e-12
 
@@ -51,3 +52,53 @@ def natural_mirror_step(
     z = np.clip(z, _EPS, None)
     z /= z.sum()
     return z
+
+
+def _eg_step(w: np.ndarray, step: np.ndarray) -> np.ndarray:
+    """Helper: exponentiated-gradient step on the simplex."""
+    step = np.asarray(step, dtype=float)
+    step -= np.max(step)
+    z = w * np.exp(step)
+    z = np.clip(z, _EPS, None)
+    z /= z.sum()
+    return z
+
+
+def natural_mirror_step_trust(
+    w: np.ndarray,
+    grad: np.ndarray,
+    inv_precond: np.ndarray | float,
+    eta: float,
+    kl_step: float = 2e-4,
+) -> np.ndarray:
+    """Natural-gradient EG step with KL trust region and Fisher normalization."""
+    w = np.asarray(w)
+    grad = np.asarray(grad)
+
+    if np.isscalar(inv_precond):
+        invp = float(inv_precond)
+    else:
+        invp = np.asarray(inv_precond, dtype=float)
+        med = float(np.median(invp)) if invp.size else 1.0
+        if med <= 0:
+            med = 1.0
+        invp = invp / med
+
+    step = eta * (invp * grad if not np.isscalar(invp) else invp * grad)
+    step = np.asarray(step, dtype=float)
+
+    z = _eg_step(w, step)
+    d = kl_divergence(w, z)
+    if d <= kl_step:
+        return z
+
+    lo, hi = 0.0, 1.0
+    for _ in range(30):
+        mid = 0.5 * (lo + hi)
+        z = _eg_step(w, step * mid)
+        d = kl_divergence(w, z)
+        if d > kl_step:
+            hi = mid
+        else:
+            lo = mid
+    return _eg_step(w, step * lo)

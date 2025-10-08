@@ -5,8 +5,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "riemannian-portfolio"
-version = "0.2.0"
-description = "Riemannian Portfolio Flow: NG Mirror Descent with Fisher pullback, no-trade execution, and ablation harness"
+version = "0.2.1"
+description = "Riemannian Portfolio Flow: NG Mirror Descent with Fisher pullback, no-trade execution, ablation harness, and KL trust region"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{name = "Aether & S.C. Saridakis"}]
