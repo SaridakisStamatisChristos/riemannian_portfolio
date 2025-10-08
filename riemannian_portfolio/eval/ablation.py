@@ -21,6 +21,12 @@ def run_strategy(
     cost_bps: float,
     kl_step: float,
 ):
+    if kl_step <= delta_in:
+        raise ValueError(
+            "The KL trust-region step must be larger than the inner no-trade band. "
+            "Otherwise every proposal stays inside the band and no trades occur. "
+            "Increase `--kl-step` or decrease `--delta-in`."
+        )
     n = rets.shape[1]
     est = EWMA(alpha_mu=0.05, alpha_cov=0.05)
     w = np.ones(n) / n
