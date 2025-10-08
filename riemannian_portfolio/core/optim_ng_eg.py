@@ -34,10 +34,20 @@ def natural_mirror_step(
     else:
         step = eta * inv_precond * grad
 
+    step = np.asarray(step, dtype=float)
+    step -= np.max(step)
+
     z = w * np.exp(step)
     z_sum = z.sum()
+
+    if not np.isfinite(z_sum) or z_sum <= _EPS:
+        step = np.clip(step, -700.0, 700.0)
+        z = w * np.exp(step)
+        z_sum = z.sum()
+
     if not np.isfinite(z_sum) or z_sum <= _EPS:
         z = w + 1e-4 * grad
+
     z = np.clip(z, _EPS, None)
     z /= z.sum()
     return z
