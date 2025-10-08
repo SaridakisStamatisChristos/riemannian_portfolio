@@ -1,0 +1,30 @@
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "riemannian-portfolio"
+version = "0.2.0"
+description = "Riemannian Portfolio Flow: NG Mirror Descent with Fisher pullback, no-trade execution, and ablation harness"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{name = "Aether & S.C. Saridakis"}]
+license = {text = "Apache-2.0"}
+keywords = ["portfolio", "information geometry", "natural gradient", "mirror descent"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: Apache Software License",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+  "numpy>=1.23",
+  "scipy>=1.9",
+  "pandas>=2.0",
+]
+
+[project.optional-dependencies]
+plot = ["matplotlib>=3.7"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
